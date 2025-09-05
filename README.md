@@ -1,3 +1,7 @@
 # Carbon-Footprint-Calculator
 
 Our project is a responsive web app that raises awareness about carbon footprints and lets users calculate their daily emissions. On scrolling, users are invited to check activities they do daily — like commuting, using appliances, or meals — each with predefined CO₂ values. The app instantly calculates their total footprint and shows it with visual progress. At the end, it also suggests sustainable alternatives, such as carpooling instead of driving or using energy-efficient devices. This way, users not only see their impact but also learn practical ways to reduce it.
+
+Direct runnable link :
+
+" https://deeptandel045.github.io/Carbon-Footprint-Calculator/ "
