@@ -1,0 +1,617 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>CarbonTrack — Daily Carbon Footprint</title>
+<meta name="description" content="Track your daily carbon footprint and get sustainable alternatives."/>
+<link rel="icon" href="data:," />
+<style>
+  /* ---------- Reset & base ---------- */
+  :root{
+    --bg1:#0f1724;
+    --bg2:#082032;
+    --card:#0b1220;
+    --accent:#00E0A8;
+    --muted:#9fb3c8;
+    --glass: rgba(255,255,255,0.04);
+    --glass-2: rgba(255,255,255,0.02);
+    --success:#7ef2b6;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    background:linear-gradient(180deg,var(--bg1) 0%, var(--bg2) 60%);
+    color:#e6f0f2;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+    padding:32px;
+  }
+  a{color:var(--accent);text-decoration:none}
+  h1,h2,h3{margin:0 0 8px 0}
+  p{margin:0 0 12px 0;color:var(--muted)}
+
+  /* ---------- Page layout ---------- */
+  .container{max-width:1100px;margin:0 auto}
+  .top{
+    display:grid;
+    gap:18px;
+    grid-template-columns: 1fr 420px;
+    align-items:start;
+    margin-bottom:22px;
+  }
+  .card{
+    background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    border-radius:14px;
+    padding:20px;
+    box-shadow: 0 6px 30px rgba(2,6,23,0.6);
+    border:1px solid rgba(255,255,255,0.03);
+  }
+
+  /* ---------- Awareness card ---------- */
+  .hero h1{font-size:26px; color:#fff}
+  .badge{
+    display:inline-flex;
+    gap:8px;
+    align-items:center;
+    background:linear-gradient(90deg,var(--accent), #66d7ff);
+    padding:6px 10px;border-radius:999px;color:#022029;font-weight:600;
+    box-shadow:0 6px 20px rgba(0,224,168,0.12);
+    margin-bottom:12px;
+    font-size:13px;
+  }
+  .hero .stat-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+  .stat{
+    background:var(--glass);
+    padding:10px;border-radius:10px;min-width:120px;text-align:center
+  }
+  .stat strong{display:block;font-size:18px;color:#fff}
+  .stat small{display:block;color:var(--muted);font-size:12px}
+
+  /* ---------- Form / inputs ---------- */
+  form .group{display:grid;grid-template-columns:1fr 140px;gap:10px;align-items:center;margin-bottom:10px}
+  label{font-size:14px;color:#cfe9e6;padding-left:6px}
+  input[type="number"], select{
+    width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);
+    background:transparent;color:inherit;font-size:14px;
+    outline:none;
+  }
+  .small{font-size:12px;color:var(--muted); margin-top:6px}
+
+  /* ---------- Buttons ---------- */
+  .btn{
+    background:linear-gradient(90deg,var(--accent), #66d7ff);
+    color:#022029;border:none;padding:12px 16px;border-radius:10px;font-weight:700;
+    cursor:pointer;box-shadow:0 8px 30px rgba(0,224,168,0.12);transition:transform .14s ease;
+  }
+  .btn:active{transform:translateY(2px)}
+  .muted-btn{background:transparent;border:1px solid rgba(255,255,255,0.05);color:var(--muted);padding:10px 12px;border-radius:10px}
+
+  /* ---------- Right panel / results ---------- */
+  .results{display:flex;flex-direction:column;gap:12px}
+  .big-number{font-size:28px;font-weight:800;color:#fff}
+  .kpi{display:flex;gap:10px;align-items:center}
+  .progress{
+    height:10px;background:var(--glass-2);border-radius:999px;overflow:hidden;width:100%;
+  }
+  .progress > b{display:block;height:100%;width:0;background:linear-gradient(90deg,#60ffd5,#6ad0ff)}
+
+  /* breakdown table */
+  .break{display:grid;gap:8px}
+  .row{display:flex;justify-content:space-between;padding:10px;border-radius:8px;background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.006))}
+  .row small{color:var(--muted)}
+  .topcontrib{display:flex;flex-direction:column;gap:8px}
+  .pill{background:rgba(255,255,255,0.03);padding:6px 8px;border-radius:999px;font-size:13px;color:var(--muted)}
+
+  /* suggestions */
+  .suggestions .sugg{padding:12px;border-radius:10px;background:linear-gradient(90deg, rgba(126,242,182,0.06), rgba(102,215,255,0.03));border:1px solid rgba(126,242,182,0.06)}
+  .sugg h4{margin:0 0 6px 0;font-size:15px;color:#0fffcf}
+  .sugg p{margin:0;font-size:13px;color:var(--muted)}
+
+  /* ---------- footer & layout smaller screens ---------- */
+  @media(max-width:980px){
+    .top{grid-template-columns:1fr; }
+    .container{padding:0 12px}
+  }
+
+  /* little animations */
+  @keyframes floaty {
+    0%{transform:translateY(0)}
+    50%{transform:translateY(-6px)}
+    100%{transform:translateY(0)}
+  }
+  .floaty{animation:floaty 4s ease-in-out infinite}
+  .logo{font-weight:800;color:var(--accent);letter-spacing:0.4px}
+  /* tiny mobile niceties */
+  @media(max-width:480px){
+    .hero h1{font-size:20px}
+    .big-number{font-size:22px}
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <div class="top">
+      <!-- Left: Awareness + Inputs -->
+      <div class="card hero">
+        <div class="badge">🌍 CarbonTrack — Daily footprint</div>
+        <h1>Understand your daily carbon footprint — & reduce it, one habit at a time.</h1>
+        <p>Small daily actions add up. This tool helps you estimate the CO₂ you produce each day from common activities and gives clear, practical alternatives to reduce your impact.</p>
+
+        <div class="stat-row">
+          <div class="stat">
+            <small>Common daily food</small>
+            <strong>~4.5 kg CO₂</strong>
+          </div>
+          <div class="stat">
+            <small>1 hr commute (car)</small>
+            <strong>~3.36 kg CO₂</strong>
+          </div>
+          <div class="stat floaty">
+            <small>1 hot shower (10 min)</small>
+            <strong>~2.0 kg CO₂</strong>
+          </div>
+        </div>
+
+        <hr style="margin:16px 0;border:none;border-top:1px solid rgba(255,255,255,0.03)">
+
+        <h3>Enter your daily activities</h3>
+        <p class="small">Fill values for activities you do today. Units and default examples are provided.</p>
+
+        <form id="trackerForm" autocomplete="off">
+          <!-- Each group: label + input -->
+          <div class="group">
+            <div>
+              <label>Standard light bulb (100 W) — hours</label>
+              <input type="number" name="light_hours" step="0.1" min="0" placeholder="e.g. 4" value="4"/>
+              <div class="small">100 W × hours → estimate in grams</div>
+            </div>
+            <div>
+              <label>Mobile use (minutes)</label>
+              <input type="number" name="phone_min" step="1" min="0" placeholder="e.g. 195" value="60" />
+            </div>
+          </div>
+
+          <div class="group">
+            <div>
+              <label>Washing machine — loads (warm)</label>
+              <input type="number" name="wash_loads" step="1" min="0" placeholder="e.g. 1" value="0"/>
+              <div class="small">One typical load ~0.63 kWh</div>
+            </div>
+            <div>
+              <label>Electric oven uses</label>
+              <input type="number" name="oven_uses" step="1" min="0" value="0" />
+            </div>
+          </div>
+
+          <div class="group">
+            <div>
+              <label>Tumble dryer cycles</label>
+              <input type="number" name="dryer_cycles" step="1" min="0" value="0" />
+            </div>
+            <div>
+              <label>Toilet rolls used</label>
+              <input type="number" name="toilet_rolls" step="1" min="0" value="0"/>
+            </div>
+          </div>
+
+          <div class="group">
+            <div>
+              <label>Hot shower minutes</label>
+              <input type="number" name="shower_min" step="1" min="0" value="10"/>
+            </div>
+            <div>
+              <label>Commute by car — minutes</label>
+              <input type="number" name="commute_min" step="1" min="0" value="0"/>
+            </div>
+          </div>
+
+          <div class="group">
+            <div>
+              <label>Meals (average) — number of meals</label>
+              <input type="number" name="meals" step="1" min="0" value="3" />
+              <div class="small">Default: ~600 kcal per meal</div>
+            </div>
+            <div>
+              <label>Meat-heavy meals (count)</label>
+              <input type="number" name="meat_meals" step="1" min="0" value="1"/>
+            </div>
+          </div>
+
+          <div class="group">
+            <div>
+              <label>Plastic bags used</label>
+              <input type="number" name="plastic_bags" step="1" min="0" value="0"/>
+            </div>
+            <div>
+              <label>Cups of coffee</label>
+              <input type="number" name="coffee" step="1" min="0" value="1"/>
+            </div>
+          </div>
+
+          <div class="group">
+            <div>
+              <label>Streaming video — hours</label>
+              <input type="number" name="stream_hours" step="0.1" min="0" value="1"/>
+            </div>
+            <div>
+              <label>Laptop use — hours</label>
+              <input type="number" name="laptop_hours" step="0.1" min="0" value="3"/>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:10px;margin-top:14px">
+            <button type="button" class="btn" id="calcBtn">Calculate footprint</button>
+            <button type="button" class="muted-btn" id="resetBtn">Reset</button>
+          </div>
+        </form>
+
+        <p class="small" style="margin-top:14px">Tip: Only fill the activities you did today. The calculator estimates <strong>daily</strong> CO₂ (kg).</p>
+      </div>
+
+      <!-- Right: Results -->
+      <div class="card results">
+        <div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div class="kpi"><small>Total daily CO₂ (kg)</small></div>
+              <div class="big-number" id="totalCO2">— kg</div>
+            </div>
+            <div style="text-align:right">
+              <small>Quick insight</small>
+              <div class="pill" id="insightPill">No data yet</div>
+            </div>
+          </div>
+
+          <div style="margin-top:12px">
+            <div class="progress" aria-hidden="true">
+              <b id="progressFill" style="width:0%"></b>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-top:8px">
+              <small>0 kg</small><small>High impact > 10 kg</small>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:12px">
+          <h3 style="margin-bottom:8px">Breakdown</h3>
+          <div class="break" id="breakdown">
+            <div class="row"><small>—</small><small>— kg</small></div>
+          </div>
+        </div>
+
+        <div style="margin-top:12px">
+          <h3 style="margin-bottom:8px">Top contributors</h3>
+          <div class="topcontrib" id="topContrib">
+            <div class="pill">No data yet</div>
+          </div>
+        </div>
+
+        <div style="margin-top:12px">
+          <h3 style="margin-bottom:8px">Suggested alternatives</h3>
+          <div class="suggestions" id="suggestions">
+            <div class="sugg"><h4>Calculate something first</h4><p>Fill activities and click "Calculate footprint" to get tailored tips and estimated savings.</p></div>
+          </div>
+        </div>
+
+        <div style="margin-top:12px; font-size:12px; color:var(--muted)">
+          <strong>Note:</strong> These are estimations for awareness & behavior change, not precise measurements. Emission factors are from public sources (VisualCapitalist, The Guardian, CarbonFootprint). See the bottom of this page for links.
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer / About & Sources -->
+    <div class="card" style="margin-top:18px; display:flex; gap:20px; flex-wrap:wrap;">
+      <div style="flex:1;min-width:280px">
+        <h3>About this tool</h3>
+        <p class="small">This hackathon MVP estimates daily greenhouse gas emissions (CO₂e) from common household and lifestyle activities. After calculating, the tool highlights high-impact behaviors and suggests clear reductions or replacements.</p>
+      </div>
+      <div style="width:320px;min-width:240px">
+        <h3>Sources</h3>
+        <ul style="color:var(--muted); padding-left:18px; margin:8px 0 0 0">
+          <li>Visual Capitalist — daily activity estimates and charts. (food, commute, devices). </li>
+          <li>The Guardian — streaming & digital consumption context. </li>
+          <li>CarbonFootprint / appliance estimates (washing, dryer, fridge). </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+<script>
+/*
+  CarbonTrack — client-side calculator
+  All emission factors below are in grams (g) per unit as best-estimates from public sources.
+  We convert to kilograms (kg) in final display.
+*/
+
+/* ---------- emission factors (grams) ---------- */
+const EF = {
+  light_100w_per_hour: 172 / 4, // source: VisualCapitalist lists 100W 4h = 172 g -> per hour = 43 g
+  phone_per_min: 189 / 195,     // VisualCapitalist: 195 min -> 189 g
+  washing_load: 275,            // per load, listed ~275 g
+  oven_use: 675,                // per use ~675 g
+  dryer_cycle: 1000,            // tumble dryer per cycle ~1000 g
+  toilet_roll_each: 1300,       // listed approx 1,300 g per roll (usage) — heavy value, keep as estimate
+  shower_per_min: 2000 / 10,    // 10 min -> 2000 g -> per min 200 g
+  commute_car_per_min: 3360 / 60, // 1 hr by car -> 3360 g
+  meal_avg: 4500 / 3,           // 3 meals -> 4,500 g -> per meal ~1500 g
+  meal_meat_extra: 6100 / 3,    // meat-heavy day ~6.1 kg -> used partially: treat meat-meal as 2000 g per meal approx (we will add meat_meal effect appropriately)
+  plastic_bag_each: 33,         // g
+  coffee_each: 50,              // g
+  streaming_per_hour: 55,       // g
+  laptop_per_hour: 180 / 5,     // 5 h -> 180 g -> per hour 36 g
+  fridge_per_day: 1100,         // 900-1300 g, use 1100 g/day
+  // Some fallback factors:
+  google_search: 0.2,           // g per search
+  tv_gaming_2h: 600             // average 450-700 for 2h -> use 600 g per 2h
+}
+
+/* ---------- form and DOM ---------- */
+const form = document.getElementById('trackerForm');
+const calcBtn = document.getElementById('calcBtn');
+const resetBtn = document.getElementById('resetBtn');
+const totalCO2El = document.getElementById('totalCO2');
+const breakdownEl = document.getElementById('breakdown');
+const topContribEl = document.getElementById('topContrib');
+const suggestionsEl = document.getElementById('suggestions');
+const insightPill = document.getElementById('insightPill');
+const progressFill = document.getElementById('progressFill');
+
+function gramsToKg(g){ return g/1000; }
+function round2(x){ return Math.round(x*100)/100; }
+
+function gatherInputs(){
+  const data = new FormData(form);
+  return {
+    light_hours: Number(data.get('light_hours')||0),
+    phone_min: Number(data.get('phone_min')||0),
+    wash_loads: Number(data.get('wash_loads')||0),
+    oven_uses: Number(data.get('oven_uses')||0),
+    dryer_cycles: Number(data.get('dryer_cycles')||0),
+    toilet_rolls: Number(data.get('toilet_rolls')||0),
+    shower_min: Number(data.get('shower_min')||0),
+    commute_min: Number(data.get('commute_min')||0),
+    meals: Number(data.get('meals')||0),
+    meat_meals: Number(data.get('meat_meals')||0),
+    plastic_bags: Number(data.get('plastic_bags')||0),
+    coffee: Number(data.get('coffee')||0),
+    stream_hours: Number(data.get('stream_hours')||0),
+    laptop_hours: Number(data.get('laptop_hours')||0)
+  };
+}
+
+function computeEmissions(inputs){
+  // compute each activity in grams
+  const items = [];
+
+  // Light bulb
+  const light_g = inputs.light_hours * EF.light_100w_per_hour * 1; // per hour g
+  items.push({key:'Light bulb (100W)', g: light_g, alt:'Switch to LED bulbs (much lower wattage) or reduce hours'});
+
+  // Phone
+  const phone_g = inputs.phone_min * EF.phone_per_min;
+  items.push({key:'Mobile phone use', g: phone_g, alt:'Reduce screen time, dim brightness, keep phone longer'});
+
+  // Washing
+  const wash_g = inputs.wash_loads * EF.washing_load;
+  items.push({key:'Washing machine (loads)', g: wash_g, alt:'Cold wash + full load, line dry instead of dryer'});
+
+  // Oven
+  const oven_g = inputs.oven_uses * EF.oven_use;
+  items.push({key:'Electric oven uses', g: oven_g, alt:'Microwave/smaller appliance or batch cooking'});
+
+  // Dryer
+  const dryer_g = inputs.dryer_cycles * EF.dryer_cycle;
+  items.push({key:'Tumble dryer cycles', g: dryer_g, alt:'Air-dry clothes (line-dry) to avoid dryer emissions'});
+
+  // Toilet rolls
+  const toilet_g = inputs.toilet_rolls * EF.toilet_roll_each;
+  items.push({key:'Toilet paper usage', g: toilet_g, alt:'Use recycled toilet paper / reduce overuse'});
+
+  // Shower
+  const shower_g = inputs.shower_min * EF.shower_per_min;
+  items.push({key:'Hot shower', g: shower_g, alt:'Shorter showers, low-flow showerheads, solar water heating'});
+
+  // Commute by car
+  const commute_g = inputs.commute_min * EF.commute_car_per_min;
+  items.push({key:'Car commute', g: commute_g, alt:'Carpool, public transport, cycle, or walk where possible'});
+
+  // Meals
+  const meals_g = inputs.meals * EF.meal_avg;
+  items.push({key:'Average meals', g: meals_g, alt:'Cook at home, reduce food waste'});
+
+  // Meat-heavy meals: we add extra per meat meal approximated by difference to plant-based
+  const meat_extra_g = inputs.meat_meals * ( (6100/3) - (4500/3) ); // approximate incremental per meat meal from those listed
+  // If meat_meals > meals, cap sensibly
+  items.push({key:'Meat-heavy portion (extra)', g: Math.max(0, meat_extra_g), alt:'Replace some meat meals with plant-based alternatives'});
+
+  // Plastic bags
+  const plastic_g = inputs.plastic_bags * EF.plastic_bag_each;
+  items.push({key:'Plastic bags', g: plastic_g, alt:'Use reusable bags'});
+
+  // Coffee
+  const coffee_g = inputs.coffee * EF.coffee_each;
+  items.push({key:'Cup of coffee', g: coffee_g, alt:'Opt for home-brew or reduce frequency'});
+
+  // Streaming
+  const stream_g = inputs.stream_hours * EF.streaming_per_hour;
+  items.push({key:'Streaming (video)', g: stream_g, alt:'Stream in lower resolution, avoid repeated streaming'});
+
+  // Laptop
+  const laptop_g = inputs.laptop_hours * EF.laptop_per_hour;
+  items.push({key:'Laptop use', g: laptop_g, alt:'Power saving, extend life, unplug when charged'});
+
+  // Fridge (always-on baseline)
+  const fridge_g = EF.fridge_per_day;
+  items.push({key:'Fridge (daily avg)', g: fridge_g, alt:'Efficient model, fill correctly, set right temp'});
+
+  // remove zero-contrib entries for clarity
+  const filtered = items.filter(it => it.g && it.g > 0.01);
+
+  // calculate total grams and return structured
+  const total_g = filtered.reduce((s,it)=>s+it.g, 0);
+  return {items: filtered, total_g};
+}
+
+function renderResults(result){
+  // total in kg
+  const totalKg = gramsToKg(result.total_g);
+  totalCO2El.textContent = round2(totalKg) + ' kg';
+
+  // progress (scale up to 15kg daily for full)
+  const pct = Math.min(100, (totalKg/15)*100);
+  progressFill.style.width = pct + '%';
+
+  // insight pill
+  if(totalKg < 1) insightPill.textContent = 'Low impact — nice!';
+  else if(totalKg < 5) insightPill.textContent = 'Moderate — room for reduction';
+  else if(totalKg < 10) insightPill.textContent = 'High — try cutting big contributors';
+  else insightPill.textContent = 'Very high — consider major changes';
+
+  // breakdown
+  breakdownEl.innerHTML = '';
+  result.items.sort((a,b)=>b.g-a.g); // sort descending
+  result.items.forEach(it=>{
+    const kg = gramsToKg(it.g);
+    const row = document.createElement('div');
+    row.className = 'row';
+    row.innerHTML = `<div><small>${escapeHtml(it.key)}</small></div><div><small>${round2(kg)} kg</small></div>`;
+    breakdownEl.appendChild(row);
+  });
+
+  // top contributors (top 3)
+  topContribEl.innerHTML = '';
+  const top3 = result.items.slice(0,3);
+  if(top3.length===0){
+    topContribEl.innerHTML = '<div class="pill">No activities entered</div>';
+  } else {
+    top3.forEach(it=>{
+      const node = document.createElement('div');
+      node.className = 'pill';
+      node.textContent = `${it.key} — ${round2(gramsToKg(it.g))} kg`;
+      topContribEl.appendChild(node);
+    });
+  }
+
+  // suggestions: make tailored suggestions and estimated savings
+  suggestionsEl.innerHTML = '';
+  if(result.items.length === 0){
+    suggestionsEl.innerHTML = `<div class="sugg"><h4>No data</h4><p>Enter some activities and click calculate to see personalized suggestions.</p></div>`;
+    return;
+  }
+
+  // Build suggestions list
+  result.items.forEach(it=>{
+    // approximate savings: if replaced/reduced, compute estimated saved grams
+    const suggestion = buildSuggestionFor(it);
+    const div = document.createElement('div');
+    div.className = 'sugg';
+    div.innerHTML = `<h4>${escapeHtml(it.key)}</h4><p>${escapeHtml(suggestion.text)}</p><p style="margin-top:6px;color:var(--muted);font-size:13px"><strong>Estimated saving:</strong> ${round2(gramsToKg(suggestion.saving_g))} kg CO₂ if you follow it today.</p>`;
+    suggestionsEl.appendChild(div);
+  });
+
+  // final callout: show top 2 highest saving recommendations
+  // compute potential savings more aggressively: consider replacements that cut 50-90% for certain activities
+  const candidates = result.items.map(it=>({key:it.key,g:it.g, alt: buildSuggestionFor(it)}));
+  candidates.sort((a,b)=>b.g-a.g);
+  // end
+}
+
+function buildSuggestionFor(item){
+  // default saving: 30% of the item's CO2
+  let saving = item.g * 0.30;
+  let text = item.alt || 'Try to reduce this activity.';
+  // tailor stronger for some keys
+  const name = item.key.toLowerCase();
+  if(name.includes('car commute')){
+    text = 'Use public transport, carpool, cycle, or walk. Public transport or cycling can cut emissions by 50–90% depending on route.';
+    saving = item.g * 0.7;
+  } else if(name.includes('meals')){
+    text = 'Replace some meat-heavy meals with plant-based alternatives. Replacing one meat-heavy meal with plant-based can save ~1–3 kg CO₂.';
+    saving = Math.min(item.g, 1500); // up to ~1.5kg
+  } else if(name.includes('tumble dryer')){
+    text = 'Air-dry clothes. This can cut dryer emissions almost entirely for that load.';
+    saving = item.g; // nearly full
+  } else if(name.includes('washing')){
+    text = 'Wash full loads on cold water and line-dry. Savings ~70–90% per load compared to warm + dryer cycles.';
+    saving = item.g * 0.8;
+  } else if(name.includes('light bulb')){
+    text = 'Switch to LED bulbs (use ~75% less energy) or reduce hours. LEDs save ~0.03–0.1 kg per day depending on usage.';
+    saving = item.g * 0.75;
+  } else if(name.includes('oven')){
+    text = 'Use microwave or batch-cook to reduce oven use.';
+    saving = item.g * 0.6;
+  } else if(name.includes('plastic')){
+    text = 'Use reusable bags — virtually zero emissions after purchase.';
+    saving = item.g;
+  } else if(name.includes('stream')){
+    text = 'Stream in lower resolution or download once instead of repeatedly streaming.';
+    saving = item.g * 0.5;
+  } else if(name.includes('phone')){
+    text = 'Limit screen time where possible, dim screen brightness, and extend device lifetime.';
+    saving = item.g * 0.4;
+  } else if(name.includes('fridge')){
+    text = 'Optimize fridge temperature, keep it full, replace old models with energy-efficient ones.';
+    saving = item.g * 0.25;
+  } else if(name.includes('coffee')){
+    text = 'Brew at home or reduce frequency; reusable cup lowers packaging footprint.';
+    saving = item.g * 0.7;
+  } else if(name.includes('shower')){
+    text = 'Take shorter showers (5–7 minutes) and use low-flow heads or solar heating.';
+    saving = item.g * 0.5;
+  }
+
+  return {text, saving_g: Math.max(0, saving)};
+}
+
+function escapeHtml(unsafe) {
+  return unsafe
+   .replaceAll('&','&amp;')
+   .replaceAll('<','&lt;')
+   .replaceAll('>','&gt;');
+}
+
+/* ---------- event handling ---------- */
+calcBtn.addEventListener('click', ()=>{
+  const inputs = gatherInputs();
+  const result = computeEmissions(inputs);
+  renderResults(result);
+  // smooth scroll results into view on small screens
+  document.querySelector('.results').scrollIntoView({behavior:'smooth'});
+});
+
+resetBtn.addEventListener('click', ()=>{
+  // reset form to defaults (reload page)
+  form.reset();
+  // set some default values again (same as initial)
+  form.elements['light_hours'].value = 4;
+  form.elements['phone_min'].value = 60;
+  form.elements['meals'].value = 3;
+  form.elements['meat_meals'].value = 1;
+  form.elements['stream_hours'].value = 1;
+  form.elements['laptop_hours'].value = 3;
+  // clear results
+  totalCO2El.textContent = '— kg';
+  breakdownEl.innerHTML = '<div class="row"><small>—</small><small>— kg</small></div>';
+  topContribEl.innerHTML = '<div class="pill">No data yet</div>';
+  suggestionsEl.innerHTML = '<div class="sugg"><h4>Calculate something first</h4><p>Fill activities and click "Calculate footprint" to get tailored tips and estimated savings.</p></div>';
+  progressFill.style.width = '0%';
+  insightPill.textContent = 'No data yet';
+});
+
+/* ---------- Initialize with a default render ---------- */
+(function init(){
+  // set initial defaults
+  form.elements['light_hours'].value = 4;
+  form.elements['phone_min'].value = 60;
+  form.elements['meals'].value = 3;
+  form.elements['meat_meals'].value = 1;
+  form.elements['stream_hours'].value = 1;
+  form.elements['laptop_hours'].value = 3;
+  // initial placeholder content already set in markup
+})();
+</script>
+</body>
+</html>
